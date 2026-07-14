@@ -213,3 +213,19 @@ class SessionUtilisateur(Base):
     date_expiration = Column(Text, nullable=False)
 
     utilisateur = relationship("Utilisateur", back_populates="sessions")
+
+
+class Amelioration(Base):
+    __tablename__ = "ameliorations"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    titre = Column(Text, nullable=False)
+    description = Column(Text)
+    statut = Column(Text, nullable=False, default="nouveau")
+    demandeur = Column(Text, nullable=False)
+    date_creation = Column(Text, server_default=func.current_timestamp())
+    date_maj = Column(Text)
+
+    __table_args__ = (
+        CheckConstraint("statut IN ('nouveau', 'en_cours', 'termine')", name="ck_ameliorations_statut"),
+    )

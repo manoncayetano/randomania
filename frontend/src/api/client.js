@@ -123,6 +123,33 @@ export async function suggererEnchainement(prompt, chainageStrict) {
   return data;
 }
 
+export async function listAmeliorations(statuts, demandeurs) {
+  const params = new URLSearchParams();
+  (statuts || []).forEach((s) => params.append('statuts', s));
+  (demandeurs || []).forEach((d) => params.append('demandeurs', d));
+  const { data } = await client.get('/ameliorations', { params });
+  return data;
+}
+
+export async function listDemandeursAmeliorations() {
+  const { data } = await client.get('/ameliorations/demandeurs');
+  return data;
+}
+
+export async function createAmelioration(titre, description) {
+  const { data } = await client.post('/ameliorations', { titre, description });
+  return data;
+}
+
+export async function updateAmelioration(id, fields) {
+  const { data } = await client.put(`/ameliorations/${id}`, fields);
+  return data;
+}
+
+export async function deleteAmelioration(id) {
+  await client.delete(`/ameliorations/${id}`);
+}
+
 export async function calculerIndiceDifficulte(distanceKm, deniveleP) {
   const { data } = await client.get('/outils/indice-difficulte', {
     params: { distance_km: distanceKm, denivele_positif: deniveleP },

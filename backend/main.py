@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import Depends, FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from api.ameliorations import router as ameliorations_router
 from api.auth import get_current_user
 from api.auth import router as auth_router
 from api.favoris import router as favoris_router
@@ -38,6 +39,7 @@ app.include_router(gpx_router, dependencies=_authenticated)
 app.include_router(projets_router, dependencies=_authenticated)
 app.include_router(refuges_router, dependencies=_authenticated)
 app.include_router(suggestions_router, dependencies=_authenticated)
+app.include_router(ameliorations_router, dependencies=_authenticated)
 
 app.mount("/media/photos", StaticFiles(directory=str(DATA_DIR / "photos")), name="photos")
 app.mount("/media/gpx", StaticFiles(directory=str(DATA_DIR / "gpx")), name="gpx")

@@ -7,6 +7,7 @@ import RandosAutour from './pages/RandosAutour';
 import Projets from './pages/Projets';
 import ProjetDetail from './pages/ProjetDetail';
 import Suggestions from './pages/Suggestions';
+import Ameliorations from './pages/Ameliorations';
 import Login from './pages/Login';
 import UserSwitcher from './components/UserSwitcher';
 import { useUser } from './context/UserContext';
@@ -44,6 +45,9 @@ function AppLayout() {
           <Link to="/suggestions" className="text-sm text-gray-500 hover:text-[var(--color-accent-dark)]">
             Proposer un enchaînement
           </Link>
+          <Link to="/ameliorations" className="text-sm text-gray-500 hover:text-[var(--color-accent-dark)]">
+            Améliorations
+          </Link>
         </div>
         <UserSwitcher />
       </header>
@@ -57,6 +61,7 @@ function AppLayout() {
         <Route path="/projets" element={<Projets />} />
         <Route path="/projets/:id" element={<ProjetDetail />} />
         <Route path="/suggestions" element={<Suggestions />} />
+        <Route path="/ameliorations" element={<Ameliorations />} />
       </Routes>
     </div>
   );

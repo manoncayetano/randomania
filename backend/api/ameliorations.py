@@ -1,0 +1,110 @@
+from datetime import datetime, timezone
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from api.auth import get_current_username
+from db.database import get_db
+from db.models import Amelioration
+
+router = APIRouter()
+
+STATUTS_VALIDES = {"nouveau", "en_cours", "termine"}
+
+
+class AmeliorationIn(BaseModel):
+    titre: str
+    description: Optional[str] = None
+
+
+class AmeliorationUpdateIn(BaseModel):
+    titre: Optional[str] = None
+    description: Optional[str] = None
+    statut: Optional[str] = None
+
+
+class AmeliorationOut(BaseModel):
+    id: int
+    titre: str
+    description: Optional[str] = None
+    statut: str
+    demandeur: str
+    date_creation: Optional[str] = None
+    date_maj: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/ameliorations", response_model=List[AmeliorationOut])
+def list_ameliorations(
+    statuts: Optional[List[str]] = Query(None),
+    demandeurs: Optional[List[str]] = Query(None),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Amelioration)
+    if statuts:
+        query = query.filter(Amelioration.statut.in_(statuts))
+    else:
+        query = query.filter(Amelioration.statut != "termine")
+    if demandeurs:
+        query = query.filter(Amelioration.demandeur.in_(demandeurs))
+    return query.order_by(Amelioration.date_creation.desc()).all()
+
+
+@router.get("/ameliorations/demandeurs", response_model=List[str])
+def list_demandeurs(db: Session = Depends(get_db)):
+    rows = db.query(Amelioration.demandeur).distinct().order_by(Amelioration.demandeur).all()
+    return [r[0] for r in rows]
+
+
+@router.post("/ameliorations", status_code=201, response_model=AmeliorationOut)
+def create_amelioration(
+    body: AmeliorationIn,
+    db: Session = Depends(get_db),
+    utilisateur: str = Depends(get_current_username),
+):
+    if not body.titre.strip():
+        raise HTTPException(status_code=400, detail="Le titre ne peut pas être vide")
+    amelioration = Amelioration(
+        titre=body.titre.strip(),
+        description=body.description,
+        statut="nouveau",
+        demandeur=utilisateur,
+    )
+    db.add(amelioration)
+    db.commit()
+    db.refresh(amelioration)
+    return amelioration
+
+
+@router.put("/ameliorations/{amelioration_id}", response_model=AmeliorationOut)
+def update_amelioration(amelioration_id: int, body: AmeliorationUpdateIn, db: Session = Depends(get_db)):
+    amelioration = db.query(Amelioration).filter(Amelioration.id == amelioration_id).first()
+    if amelioration is None:
+        raise HTTPException(status_code=404, detail="Demande introuvable")
+
+    updates = body.model_dump(exclude_unset=True)
+    if "statut" in updates and updates["statut"] not in STATUTS_VALIDES:
+        raise HTTPException(status_code=400, detail="Statut invalide (nouveau, en_cours, termine)")
+    if "titre" in updates and not (updates["titre"] or "").strip():
+        raise HTTPException(status_code=400, detail="Le titre ne peut pas être vide")
+
+    for field, value in updates.items():
+        setattr(amelioration, field, value)
+    amelioration.date_maj = datetime.now(timezone.utc).isoformat()
+    db.commit()
+    db.refresh(amelioration)
+    return amelioration
+
+
+@router.delete("/ameliorations/{amelioration_id}")
+def delete_amelioration(amelioration_id: int, db: Session = Depends(get_db)):
+    amelioration = db.query(Amelioration).filter(Amelioration.id == amelioration_id).first()
+    if amelioration is None:
+        raise HTTPException(status_code=404, detail="Demande introuvable")
+    db.delete(amelioration)
+    db.commit()
+    return {"status": "ok"}
