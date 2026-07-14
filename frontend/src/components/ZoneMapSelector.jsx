@@ -82,6 +82,10 @@ export default function ZoneMapSelector({ value, onChange }) {
     onChange({ type: 'polygone', points: [] });
   }
 
+  function handleAnnulerDernierPoint() {
+    onChange({ type: 'polygone', points: points.slice(0, -1) });
+  }
+
   return (
     <div className="space-y-2">
       <ModeToggle mode={mode} onChange={handleModeChange} />
@@ -149,6 +153,9 @@ export default function ZoneMapSelector({ value, onChange }) {
       {mode === 'polygone' && points.length > 0 && (
         <div className="flex items-center gap-3 text-sm">
           {points.length < 3 && <span className="text-gray-500">Ajoute au moins 3 points pour former une zone.</span>}
+          <button type="button" onClick={handleAnnulerDernierPoint} className="text-gray-600 underline">
+            Annuler le dernier point
+          </button>
           <button type="button" onClick={handleRecommencerPolygone} className="text-gray-600 underline">
             Recommencer
           </button>
