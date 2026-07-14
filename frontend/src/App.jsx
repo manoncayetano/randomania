@@ -6,6 +6,7 @@ import ImporterRando from './pages/ImporterRando';
 import RandosAutour from './pages/RandosAutour';
 import Projets from './pages/Projets';
 import ProjetDetail from './pages/ProjetDetail';
+import Suggestions from './pages/Suggestions';
 import Login from './pages/Login';
 import UserSwitcher from './components/UserSwitcher';
 import { useUser } from './context/UserContext';
@@ -40,6 +41,9 @@ function AppLayout() {
           <Link to="/projets" className="text-sm text-gray-500 hover:text-[var(--color-accent-dark)]">
             Mes projets
           </Link>
+          <Link to="/suggestions" className="text-sm text-gray-500 hover:text-[var(--color-accent-dark)]">
+            Proposer un enchaînement
+          </Link>
         </div>
         <UserSwitcher />
       </header>
@@ -52,6 +56,7 @@ function AppLayout() {
         <Route path="/importer" element={<ImporterRando />} />
         <Route path="/projets" element={<Projets />} />
         <Route path="/projets/:id" element={<ProjetDetail />} />
+        <Route path="/suggestions" element={<Suggestions />} />
       </Routes>
     </div>
   );

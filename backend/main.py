@@ -14,6 +14,7 @@ from api.projets import router as projets_router
 from api.realisations import router as realisations_router
 from api.refuges import router as refuges_router
 from api.search import router as search_router
+from api.suggestions import router as suggestions_router
 from api.tags import router as tags_router
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -36,6 +37,7 @@ app.include_router(import_router, dependencies=_authenticated)
 app.include_router(gpx_router, dependencies=_authenticated)
 app.include_router(projets_router, dependencies=_authenticated)
 app.include_router(refuges_router, dependencies=_authenticated)
+app.include_router(suggestions_router, dependencies=_authenticated)
 
 app.mount("/media/photos", StaticFiles(directory=str(DATA_DIR / "photos")), name="photos")
 app.mount("/media/gpx", StaticFiles(directory=str(DATA_DIR / "gpx")), name="gpx")

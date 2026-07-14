@@ -115,6 +115,14 @@ export async function importZone(lieu, rayonKm, niveaux) {
   return data;
 }
 
+export async function suggererEnchainement(prompt, chainageStrict) {
+  const { data } = await client.post('/suggestions/enchainement', {
+    prompt,
+    chainage_strict: chainageStrict,
+  });
+  return data;
+}
+
 export async function calculerIndiceDifficulte(distanceKm, deniveleP) {
   const { data } = await client.get('/outils/indice-difficulte', {
     params: { distance_km: distanceKm, denivele_positif: deniveleP },
