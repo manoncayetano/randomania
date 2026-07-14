@@ -33,6 +33,7 @@ function FitToTrack({ points }) {
 
 export default function ParcoursMap({ parcours, hoverPoint, heightClass = 'h-[171px] sm:h-[213px]' }) {
   const [afficherRefuges, setAfficherRefuges] = useState(false);
+  const [afficherRando, setAfficherRando] = useState(false);
   const { refuges, loading: refugesEnCours } = useRefuges(afficherRefuges);
 
   const points = parcours.gpx_points || [];
@@ -55,6 +56,12 @@ export default function ParcoursMap({ parcours, hoverPoint, heightClass = 'h-[17
             attribution="&copy; OpenStreetMap contributors"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          {afficherRando && (
+            <TileLayer
+              attribution='&copy; <a href="https://waymarkedtrails.org">Waymarked Trails</a>'
+              url="https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png"
+            />
+          )}
           {points.length > 1 ? (
             <>
               <Polyline positions={points} pathOptions={{ color: '#1d9e75', weight: 4 }} />
@@ -76,7 +83,7 @@ export default function ParcoursMap({ parcours, hoverPoint, heightClass = 'h-[17
         </MapContainer>
       </div>
 
-      <div className="border-t border-gray-200 bg-white px-2 py-2">
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-1 border-t border-gray-200 bg-white px-2 py-2">
         <button
           type="button"
           onClick={() => setAfficherRefuges((v) => !v)}
@@ -90,6 +97,21 @@ export default function ParcoursMap({ parcours, hoverPoint, heightClass = 'h-[17
             style={{ backgroundColor: COULEUR_REFUGE, opacity: afficherRefuges ? 1 : 0.3 }}
           />
           {refugesEnCours ? 'Chargement des refuges...' : 'Afficher les refuges'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAfficherRando((v) => !v)}
+          title={afficherRando ? 'Cliquer pour masquer les sentiers balisés' : 'Cliquer pour afficher les sentiers balisés (OSM Rando)'}
+          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs transition ${
+            afficherRando ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-400 hover:bg-gray-50'
+          }`}
+        >
+          <span
+            className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: '#e0301e', opacity: afficherRando ? 1 : 0.3 }}
+          />
+          OSM Rando
         </button>
       </div>
     </div>
