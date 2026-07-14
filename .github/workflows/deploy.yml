@@ -8,7 +8,33 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Se connecter à la VM et mettre à jour l'appli
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Le build se fait ici (machine avec beaucoup de RAM), jamais sur la VM (RAM très limitée).
+      - name: Compiler le frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Copier le frontend compilé sur la VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          source: "frontend/dist/*"
+          target: "/opt/randomania/frontend/dist"
+          strip_components: 2
+          overwrite: true
+
+      - name: Mettre à jour le backend et redémarrer
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.ORACLE_HOST }}

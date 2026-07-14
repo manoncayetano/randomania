@@ -22,11 +22,16 @@ curl -O https://raw.githubusercontent.com/manoncayetano/randomania/main/deploy/s
 bash setup.sh
 ```
 
-Le script installe tout (Python, Node, Caddy), récupère le code, build le frontend,
-configure le service qui fait tourner le backend en continu, active le HTTPS
-automatique, et ajuste SELinux (activé par défaut sur Oracle Linux) pour autoriser
-Caddy à servir les fichiers et à contacter le backend. À la fin, il affiche l'adresse
-à utiliser (`https://xx-xx-xx-xx.nip.io`).
+Le script installe Python et Caddy, récupère le code, configure le service qui fait
+tourner le backend en continu, active le HTTPS automatique, et ajuste SELinux (activé
+par défaut sur Oracle Linux) pour autoriser Caddy à servir les fichiers et à contacter
+le backend. À la fin, il affiche l'adresse à utiliser (`https://xx-xx-xx-xx.nip.io`).
+
+Le frontend n'est **pas** compilé sur la VM (Node.js n'y est même pas installé) : la VM
+Always Free a très peu de RAM, et `npm run build` la ferait planter. Le script crée juste
+un dossier `frontend/dist` vide (page "installation en cours") — le vrai contenu arrive
+via le déploiement automatique GitHub Actions (voir plus bas), qui compile le frontend
+sur les machines GitHub (RAM abondante) puis copie juste le résultat sur la VM.
 
 ## 4. Récupérer tes données existantes (base, photos, GPX)
 
@@ -52,10 +57,16 @@ python scripts/gerer_utilisateurs.py creer manon Manon 'MotDePasse'
 
 ## Mettre à jour l'appli après un nouveau push sur GitHub
 
+Automatique : chaque push sur `main` déclenche le workflow GitHub Actions
+(`.github/workflows/deploy.yml`), qui compile le frontend sur les machines GitHub,
+copie le résultat sur la VM, puis lance `deploy/deploy.sh` (git pull, dépendances
+Python, redémarrage des services) — sans jamais faire tourner Node.js sur la VM.
+
+Pour relancer une mise à jour manuellement (sans repasser par GitHub Actions) :
 ```
 ssh -i /chemin/vers/ta-cle.key opc@<IP_DE_LA_VM>
-cd /opt/randomania && bash deploy/setup.sh
+cd /opt/randomania && bash deploy/deploy.sh
 ```
-
-Le script est idempotent : il met à jour le code, rebuild le frontend, et redémarre
-les services, sans toucher à `data/`.
+(Le frontend ne sera alors pas recompilé — seul le backend est mis à jour. Pour un
+nouveau frontend, il faut passer par un push GitHub, ou compiler en local et le
+copier via `scp`.)

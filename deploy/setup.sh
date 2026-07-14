@@ -8,7 +8,7 @@ REPO_URL="https://github.com/manoncayetano/randomania.git"
 APP_DIR="/opt/randomania"
 
 echo "=== Mise à jour du système ==="
-sudo dnf update -y
+sudo dnf update -y || echo "Mise a jour ignoree (pas assez de memoire), on continue avec les paquets necessaires"
 sudo dnf install -y python3 python3-pip git curl firewalld policycoreutils-python-utils
 
 echo "=== Pare-feu (ouverture HTTP/HTTPS) ==="
@@ -17,10 +17,6 @@ sudo firewall-cmd --permanent --add-service=ssh
 sudo firewall-cmd --permanent --add-port=80/tcp
 sudo firewall-cmd --permanent --add-port=443/tcp
 sudo firewall-cmd --reload
-
-echo "=== Installation de Node.js ==="
-curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo -E bash -
-sudo dnf install -y nodejs
 
 echo "=== Installation de Caddy ==="
 sudo dnf install -y 'dnf-command(copr)'
@@ -44,10 +40,11 @@ pip install -r requirements.txt
 python -c "from db.init_db import init_db; init_db()"
 deactivate
 
-echo "=== Frontend : build ==="
-cd "$APP_DIR/frontend"
-npm install
-npm run build
+echo "=== Frontend : dossier d'accueil (le contenu réel arrive via le déploiement automatique GitHub Actions) ==="
+mkdir -p "$APP_DIR/frontend/dist"
+if [ ! -f "$APP_DIR/frontend/dist/index.html" ]; then
+  echo "<html><body><p>Installation en cours, reviens dans quelques minutes.</p></body></html>" > "$APP_DIR/frontend/dist/index.html"
+fi
 
 echo "=== Service systemd (démarrage auto + redémarrage si crash) ==="
 sudo cp "$APP_DIR/deploy/randomania-backend.service" /etc/systemd/system/
@@ -56,7 +53,11 @@ sudo systemctl enable randomania-backend
 sudo systemctl restart randomania-backend
 
 echo "=== Autorisation du redémarrage sans mot de passe (nécessaire pour le déploiement automatique) ==="
-echo "opc ALL=(root) NOPASSWD: /bin/systemctl restart randomania-backend" | sudo tee /etc/sudoers.d/randomania-deploy > /dev/null
+sudo tee /etc/sudoers.d/randomania-deploy > /dev/null <<'SUDOERS'
+opc ALL=(root) NOPASSWD: /bin/systemctl restart randomania-backend
+opc ALL=(root) NOPASSWD: /bin/systemctl restart caddy
+opc ALL=(root) NOPASSWD: /bin/restorecon -Rv /opt/randomania/frontend/dist
+SUDOERS
 sudo chmod 440 /etc/sudoers.d/randomania-deploy
 
 echo "=== SELinux : autoriser Caddy à servir les fichiers et à contacter le backend ==="
