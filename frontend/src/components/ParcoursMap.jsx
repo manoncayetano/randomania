@@ -31,7 +31,7 @@ function FitToTrack({ points }) {
   return null;
 }
 
-export default function ParcoursMap({ parcours, hoverPoint }) {
+export default function ParcoursMap({ parcours, hoverPoint, heightClass = 'h-[171px] sm:h-[213px]' }) {
   const [afficherRefuges, setAfficherRefuges] = useState(false);
   const { refuges, loading: refugesEnCours } = useRefuges(afficherRefuges);
 
@@ -49,7 +49,7 @@ export default function ParcoursMap({ parcours, hoverPoint }) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200">
-      <div className="h-[171px] sm:h-[213px]">
+      <div className={heightClass}>
         <MapContainer center={center} zoom={13} className="h-full w-full">
           <TileLayer
             attribution="&copy; OpenStreetMap contributors"

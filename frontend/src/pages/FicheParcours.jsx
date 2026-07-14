@@ -13,6 +13,9 @@ import ElevationProfile from '../components/ElevationProfile';
 import AjouterAuProjet from '../components/AjouterAuProjet';
 import EditParcoursForm from '../components/EditParcoursForm';
 import EffortDetailModal from '../components/EffortDetailModal';
+import CarteGraphModal from '../components/CarteGraphModal';
+
+const NIVEAU_LABELS = { facile: 'Facile', moyen: 'Moyen', difficile: 'Difficile' };
 
 function AvisSummary({ avis }) {
   const notes = avis.map((a) => a.note).filter((n) => n != null);
@@ -35,6 +38,7 @@ export default function FicheParcours() {
   const [error, setError] = useState(null);
   const [hoverPoint, setHoverPoint] = useState(null);
   const [effortOuvert, setEffortOuvert] = useState(false);
+  const [carteAgrandie, setCarteAgrandie] = useState(false);
 
   const load = useCallback(() => {
     getParcours(id)
@@ -117,6 +121,9 @@ export default function FicheParcours() {
           {parcours.duree_marche_min}–{parcours.duree_marche_max} h
         </span>
         {parcours.duree_jours > 1 && <span>{parcours.duree_jours} jours</span>}
+        {parcours.niveau && (
+          <span className="text-gray-500">Niveau Visorando : {NIVEAU_LABELS[parcours.niveau] || parcours.niveau}</span>
+        )}
         <DifficultyBadge indice={parcours.indice_difficulte} label={parcours.indice_difficulte_label} />
         {parcours.gpx_path && (
           <button
@@ -136,6 +143,14 @@ export default function FicheParcours() {
           label={parcours.indice_difficulte_label}
           onClose={() => setEffortOuvert(false)}
         />
+      )}
+
+      {parcours.tags?.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {parcours.tags.map((tag) => (
+            <TagBadge key={tag} label={tag} />
+          ))}
+        </div>
       )}
 
       <AvisSummary avis={parcours.avis || []} />
@@ -161,18 +176,16 @@ export default function FicheParcours() {
         <EditParcoursForm parcours={parcours} onSaved={load} />
       </div>
 
-      {parcours.photos?.length > 0 && (
-        <div className="mt-6">
-          <PhotoCarousel
-            photos={parcours.photos || []}
-            coverPhotoId={parcours.cover_photo_id}
-            parcoursId={parcours.id}
-            onChange={load}
-          />
-        </div>
-      )}
-
       <div className="mt-6 space-y-3">
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setCarteAgrandie(true)}
+            className="text-sm text-[var(--color-accent-dark)] underline"
+          >
+            Agrandir la carte et le graphique
+          </button>
+        </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <ParcoursMap parcours={parcours} hoverPoint={hoverPoint} />
           <ElevationProfile profile={parcours.gpx_profile} onHover={setHoverPoint} />
@@ -193,11 +206,23 @@ export default function FicheParcours() {
         </div>
       </div>
 
-      {parcours.tags?.length > 0 && (
-        <div className="mt-6 flex flex-wrap gap-2">
-          {parcours.tags.map((tag) => (
-            <TagBadge key={tag} label={tag} />
-          ))}
+      {carteAgrandie && (
+        <CarteGraphModal
+          parcours={parcours}
+          hoverPoint={hoverPoint}
+          onHover={setHoverPoint}
+          onClose={() => setCarteAgrandie(false)}
+        />
+      )}
+
+      {parcours.photos?.length > 0 && (
+        <div className="mt-6">
+          <PhotoCarousel
+            photos={parcours.photos || []}
+            coverPhotoId={parcours.cover_photo_id}
+            parcoursId={parcours.id}
+            onChange={load}
+          />
         </div>
       )}
 

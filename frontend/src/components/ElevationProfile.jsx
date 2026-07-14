@@ -7,7 +7,7 @@ const PAD_RIGHT = 8;
 const PAD_TOP = 12;
 const PAD_BOTTOM = 24;
 
-export default function ElevationProfile({ profile, onHover }) {
+export default function ElevationProfile({ profile, onHover, heightClass = 'h-32' }) {
   const svgRef = useRef(null);
   const [hoverIndex, setHoverIndex] = useState(null);
 
@@ -79,7 +79,7 @@ export default function ElevationProfile({ profile, onHover }) {
         ref={svgRef}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         preserveAspectRatio="none"
-        className="h-32 w-full"
+        className={`${heightClass} w-full`}
         onMouseMove={handleMove}
         onMouseLeave={() => setHover(null)}
       >
