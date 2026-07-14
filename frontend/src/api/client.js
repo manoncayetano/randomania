@@ -178,6 +178,11 @@ export async function deleteGpx(parcoursId) {
   await client.delete(`/parcours/${parcoursId}/gpx`);
 }
 
+export async function getEffortDetail(parcoursId) {
+  const { data } = await client.get(`/parcours/${parcoursId}/effort`);
+  return data;
+}
+
 export async function getParcoursProches(parcoursId, criteres, rayonKm) {
   const params = buildParams(criteres);
   params.append('rayon_km', rayonKm);

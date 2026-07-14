@@ -12,6 +12,7 @@ import UploadDropzone from '../components/UploadDropzone';
 import ElevationProfile from '../components/ElevationProfile';
 import AjouterAuProjet from '../components/AjouterAuProjet';
 import EditParcoursForm from '../components/EditParcoursForm';
+import EffortDetailModal from '../components/EffortDetailModal';
 
 function AvisSummary({ avis }) {
   const notes = avis.map((a) => a.note).filter((n) => n != null);
@@ -33,6 +34,7 @@ export default function FicheParcours() {
   const [parcours, setParcours] = useState(null);
   const [error, setError] = useState(null);
   const [hoverPoint, setHoverPoint] = useState(null);
+  const [effortOuvert, setEffortOuvert] = useState(false);
 
   const load = useCallback(() => {
     getParcours(id)
@@ -116,7 +118,25 @@ export default function FicheParcours() {
         </span>
         {parcours.duree_jours > 1 && <span>{parcours.duree_jours} jours</span>}
         <DifficultyBadge indice={parcours.indice_difficulte} label={parcours.indice_difficulte_label} />
+        {parcours.gpx_path && (
+          <button
+            type="button"
+            onClick={() => setEffortOuvert(true)}
+            className="text-sm text-[var(--color-accent-dark)] underline"
+          >
+            Détail de l'effort
+          </button>
+        )}
       </div>
+
+      {effortOuvert && (
+        <EffortDetailModal
+          parcoursId={parcours.id}
+          indice={parcours.indice_difficulte}
+          label={parcours.indice_difficulte_label}
+          onClose={() => setEffortOuvert(false)}
+        />
+      )}
 
       <AvisSummary avis={parcours.avis || []} />
 

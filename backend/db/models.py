@@ -35,6 +35,7 @@ class Parcours(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     temps_voiture_min = Column(Float)
+    ies_kcal_kg = Column(Float)
 
     photos = relationship("Photo", back_populates="parcours", cascade="all, delete-orphan", foreign_keys="Photo.parcours_id")
     avis = relationship("Avis", back_populates="parcours", cascade="all, delete-orphan")

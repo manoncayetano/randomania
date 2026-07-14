@@ -138,7 +138,7 @@ def _to_parcours_out(
     realisations: Optional[dict] = None,
     favori_counts: Optional[dict] = None,
 ) -> ParcoursOut:
-    difficulte = compute_indice_difficulte(p.distance_km, p.denivele_positif)
+    difficulte = compute_indice_difficulte(p.distance_km, p.denivele_positif, p.ies_kcal_kg)
     realisation = (realisations or {}).get(p.id)
     return ParcoursOut(
         id=p.id,
@@ -232,7 +232,7 @@ def _filtered_parcours(
         labels_set = set(indice_difficulte_labels)
         results = [
             p for p in results
-            if compute_indice_difficulte(p.distance_km, p.denivele_positif)["label"] in labels_set
+            if compute_indice_difficulte(p.distance_km, p.denivele_positif, p.ies_kcal_kg)["label"] in labels_set
         ]
 
     if zone_lat is not None and zone_lon is not None and zone_rayon_km is not None:
