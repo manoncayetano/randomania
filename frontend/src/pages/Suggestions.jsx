@@ -4,6 +4,28 @@ import { addEtape, createProjet, suggererEnchainement } from '../api/client';
 import DifficultyBadge from '../components/DifficultyBadge';
 
 const NIVEAU_LABELS = { facile: 'facile', moyen: 'moyen', difficile: 'difficile' };
+const HISTORIQUE_KEY = 'rando-suggestions-historique';
+const HISTORIQUE_MAX = 10;
+
+function chargerHistorique() {
+  try {
+    const brut = localStorage.getItem(HISTORIQUE_KEY);
+    return brut ? JSON.parse(brut) : [];
+  } catch {
+    return [];
+  }
+}
+
+function enregistrerHistorique(texte, historiqueActuel) {
+  const sansDoublon = historiqueActuel.filter((t) => t !== texte);
+  const nouveau = [texte, ...sansDoublon].slice(0, HISTORIQUE_MAX);
+  try {
+    localStorage.setItem(HISTORIQUE_KEY, JSON.stringify(nouveau));
+  } catch {
+    // stockage indisponible, tant pis
+  }
+  return nouveau;
+}
 
 function decrireJour(jour, index) {
   const parts = [];
@@ -19,15 +41,19 @@ export default function Suggestions() {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [creatingIndex, setCreatingIndex] = useState(null);
+  const [historique, setHistorique] = useState(() => chargerHistorique());
+  const [showHistorique, setShowHistorique] = useState(false);
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!prompt.trim()) return;
+    const texte = prompt.trim();
+    if (!texte) return;
+    setHistorique(enregistrerHistorique(texte, historique));
     setLoading(true);
     setError(null);
     try {
-      const data = await suggererEnchainement(prompt.trim(), chainageStrict);
+      const data = await suggererEnchainement(texte, chainageStrict);
       setResult(data);
       setChainageStrict(data.interpretation.chainage_strict);
     } catch (err) {
@@ -55,6 +81,20 @@ export default function Suggestions() {
     }
   }
 
+  function handleUseHistorique(texte) {
+    setPrompt(texte);
+    setShowHistorique(false);
+  }
+
+  function handleEffacerHistorique() {
+    setHistorique([]);
+    try {
+      localStorage.removeItem(HISTORIQUE_KEY);
+    } catch {
+      // stockage indisponible, tant pis
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="mb-2 text-2xl font-medium text-gray-900">Proposer un enchaînement de randos</h1>
@@ -72,6 +112,41 @@ export default function Suggestions() {
           placeholder="Décris ton projet de rando..."
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none"
         />
+
+        {historique.length > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowHistorique((v) => !v)}
+              className="text-sm text-[var(--color-accent-dark)] underline"
+            >
+              {showHistorique ? 'Masquer les derniers textes' : `Voir les derniers textes (${historique.length})`}
+            </button>
+
+            {showHistorique && (
+              <div className="mt-2 space-y-1 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                {historique.map((texte, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleUseHistorique(texte)}
+                    className="block w-full truncate rounded px-2 py-1 text-left text-sm text-gray-600 hover:bg-white hover:text-[var(--color-accent-dark)]"
+                    title={texte}
+                  >
+                    {texte}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleEffacerHistorique}
+                  className="mt-1 px-2 text-xs text-red-600 underline"
+                >
+                  Effacer l'historique
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <label className="flex items-center gap-2 text-sm text-gray-600">
           <input
