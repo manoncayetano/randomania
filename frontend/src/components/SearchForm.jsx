@@ -44,8 +44,10 @@ export default function SearchForm({ onSearch, initialValues = {} }) {
   const { utilisateur } = useUser();
   const [zoneSelection, setZoneSelection] = useState(
     initialValues.zone_lat != null && initialValues.zone_lon != null
-      ? { lat: initialValues.zone_lat, lon: initialValues.zone_lon, rayonKm: initialValues.zone_rayon_km ?? 15 }
-      : null
+      ? { type: 'cercle', lat: initialValues.zone_lat, lon: initialValues.zone_lon, rayonKm: initialValues.zone_rayon_km ?? 15 }
+      : initialValues.zone_polygone
+        ? { type: 'polygone', points: initialValues.zone_polygone }
+        : null
   );
   const [zoneCarteOuverte, setZoneCarteOuverte] = useState(false);
   const [q, setQ] = useState(initialValues.q ?? '');
@@ -75,9 +77,10 @@ export default function SearchForm({ onSearch, initialValues = {} }) {
   }, []);
 
   const criteres = {
-    zone_lat: zoneSelection?.lat,
-    zone_lon: zoneSelection?.lon,
-    zone_rayon_km: zoneSelection?.rayonKm,
+    zone_lat: zoneSelection?.type === 'cercle' ? zoneSelection.lat : undefined,
+    zone_lon: zoneSelection?.type === 'cercle' ? zoneSelection.lon : undefined,
+    zone_rayon_km: zoneSelection?.type === 'cercle' ? zoneSelection.rayonKm : undefined,
+    zone_polygone: zoneSelection?.type === 'polygone' && zoneSelection.points.length >= 3 ? zoneSelection.points : undefined,
     q: q || undefined,
     niveau: niveaux.length ? niveaux : undefined,
     distance_min: distanceMin || undefined,
@@ -257,9 +260,14 @@ export default function SearchForm({ onSearch, initialValues = {} }) {
           >
             {zoneCarteOuverte ? 'Masquer la carte' : 'Sélectionner une zone sur la carte'}
           </button>
-          {zoneSelection && !zoneCarteOuverte && (
+          {zoneSelection?.type === 'cercle' && !zoneCarteOuverte && (
             <span className="text-xs text-gray-500">
               Rayon {zoneSelection.rayonKm} km autour de ({zoneSelection.lat.toFixed(3)}, {zoneSelection.lon.toFixed(3)})
+            </span>
+          )}
+          {zoneSelection?.type === 'polygone' && !zoneCarteOuverte && (
+            <span className="text-xs text-gray-500">
+              Zone libre ({zoneSelection.points.length} points)
             </span>
           )}
         </div>

@@ -25,6 +25,7 @@ function buildParams(criteres) {
   if (criteres.zone_lat != null) params.append('zone_lat', criteres.zone_lat);
   if (criteres.zone_lon != null) params.append('zone_lon', criteres.zone_lon);
   if (criteres.zone_rayon_km != null) params.append('zone_rayon_km', criteres.zone_rayon_km);
+  if (criteres.zone_polygone) params.append('zone_polygone', JSON.stringify(criteres.zone_polygone));
   if (criteres.q) params.append('q', criteres.q);
   (criteres.niveau || []).forEach((n) => params.append('niveau', n));
   if (criteres.distance_min) params.append('distance_min', criteres.distance_min);

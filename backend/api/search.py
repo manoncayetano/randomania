@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -9,7 +10,7 @@ from api.auth import get_current_username
 from db.database import DATA_DIR, get_db
 from db.models import Avis, Favori, Parcours, ParcoursTag, Photo, Realisation, Restriction, Tag
 from generation.difficulty import compute_indice_difficulte
-from generation.geo import haversine_km
+from generation.geo import haversine_km, point_in_polygon
 from generation.gpx import parse_gpx
 
 router = APIRouter()
@@ -188,6 +189,7 @@ def _filtered_parcours(
     zone_lat: Optional[float] = None,
     zone_lon: Optional[float] = None,
     zone_rayon_km: Optional[float] = None,
+    zone_polygone: Optional[List[List[float]]] = None,
 ) -> List[Parcours]:
     query = db.query(Parcours)
 
@@ -242,7 +244,24 @@ def _filtered_parcours(
             and haversine_km(zone_lat, zone_lon, p.latitude, p.longitude) <= zone_rayon_km
         ]
 
+    if zone_polygone and len(zone_polygone) >= 3:
+        results = [
+            p for p in results
+            if p.latitude is not None and p.longitude is not None
+            and point_in_polygon(p.latitude, p.longitude, zone_polygone)
+        ]
+
     return results
+
+
+def _parse_zone_polygone(raw: Optional[str]) -> Optional[List[List[float]]]:
+    if not raw:
+        return None
+    try:
+        points = json.loads(raw)
+        return [[float(p[0]), float(p[1])] for p in points]
+    except (ValueError, TypeError, IndexError):
+        raise HTTPException(status_code=400, detail="zone_polygone invalide (attendu : JSON [[lat,lon], ...])")
 
 
 @router.get("/parcours/count")
@@ -266,6 +285,7 @@ def count_parcours(
     zone_lat: Optional[float] = Query(None, description="Latitude du centre de la zone sélectionnée sur la carte"),
     zone_lon: Optional[float] = Query(None, description="Longitude du centre de la zone sélectionnée sur la carte"),
     zone_rayon_km: Optional[float] = Query(None, gt=0, description="Rayon (km) de la zone sélectionnée sur la carte"),
+    zone_polygone: Optional[str] = Query(None, description="Zone libre dessinée sur la carte, JSON [[lat,lon], ...]"),
     db: Session = Depends(get_db),
 ):
     results = _filtered_parcours(
@@ -274,7 +294,7 @@ def count_parcours(
         denivele_negatif_min, denivele_negatif_max,
         tags, favoris_de, indice_difficulte_labels,
         temps_min, temps_max, a_gpx, a_lien,
-        zone_lat, zone_lon, zone_rayon_km,
+        zone_lat, zone_lon, zone_rayon_km, _parse_zone_polygone(zone_polygone),
     )
     return {"count": len(results)}
 
@@ -300,6 +320,7 @@ def search_parcours(
     zone_lat: Optional[float] = Query(None, description="Latitude du centre de la zone sélectionnée sur la carte"),
     zone_lon: Optional[float] = Query(None, description="Longitude du centre de la zone sélectionnée sur la carte"),
     zone_rayon_km: Optional[float] = Query(None, gt=0, description="Rayon (km) de la zone sélectionnée sur la carte"),
+    zone_polygone: Optional[str] = Query(None, description="Zone libre dessinée sur la carte, JSON [[lat,lon], ...]"),
     db: Session = Depends(get_db),
     utilisateur: str = Depends(get_current_username),
 ):
@@ -309,7 +330,7 @@ def search_parcours(
         denivele_negatif_min, denivele_negatif_max,
         tags, favoris_de, indice_difficulte_labels,
         temps_min, temps_max, a_gpx, a_lien,
-        zone_lat, zone_lon, zone_rayon_km,
+        zone_lat, zone_lon, zone_rayon_km, _parse_zone_polygone(zone_polygone),
     )
 
     favori_ids = {
