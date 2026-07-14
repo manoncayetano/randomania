@@ -179,7 +179,7 @@ export default function ProjetDetail() {
       )}
 
       {projet.etapes.length > 0 && (
-        <div className="mt-6 space-y-3">
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <ProjetMap
             etapes={projet.etapes}
             masquees={masquees}

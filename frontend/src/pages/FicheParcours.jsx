@@ -173,9 +173,11 @@ export default function FicheParcours() {
       )}
 
       <div className="mt-6 space-y-3">
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <ParcoursMap parcours={parcours} hoverPoint={hoverPoint} />
           <ElevationProfile profile={parcours.gpx_profile} onHover={setHoverPoint} />
+        </div>
+        <div className="space-y-3">
           {parcours.gpx_path && (
             <button
               type="button"

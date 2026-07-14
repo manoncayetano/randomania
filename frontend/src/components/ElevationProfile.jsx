@@ -20,6 +20,14 @@ export default function ElevationProfile({ profile, onHover }) {
   const maxEle = Math.max(...elevations);
   const maxDist = distances[distances.length - 1] || 1;
 
+  let deniveleP = 0;
+  let deniveleN = 0;
+  for (let i = 1; i < elevations.length; i++) {
+    const delta = elevations[i] - elevations[i - 1];
+    if (delta > 0) deniveleP += delta;
+    else deniveleN += -delta;
+  }
+
   const plotW = WIDTH - PAD_LEFT - PAD_RIGHT;
   const plotH = HEIGHT - PAD_TOP - PAD_BOTTOM;
 
@@ -64,6 +72,9 @@ export default function ElevationProfile({ profile, onHover }) {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-3">
+      <p className="mb-1 text-sm font-medium text-gray-700">
+        Dénivelé : +{Math.round(deniveleP)} m / -{Math.round(deniveleN)} m
+      </p>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
