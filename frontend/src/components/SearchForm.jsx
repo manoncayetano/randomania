@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { countParcours, listTags, listUtilisateurs } from '../api/client';
 import { useUser } from '../context/UserContext';
+import ZoneMapSelector from './ZoneMapSelector';
 
 const NIVEAUX = ['facile', 'moyen', 'difficile'];
 const DIFFICULTE_LABELS = ['Facile', 'Modéré', 'Assez difficile', 'Difficile', 'Très difficile'];
@@ -41,7 +42,12 @@ function OuiNonToggle({ label, value, onChange }) {
 
 export default function SearchForm({ onSearch, initialValues = {} }) {
   const { utilisateur } = useUser();
-  const [zone, setZone] = useState(initialValues.zone ?? '');
+  const [zoneSelection, setZoneSelection] = useState(
+    initialValues.zone_lat != null && initialValues.zone_lon != null
+      ? { lat: initialValues.zone_lat, lon: initialValues.zone_lon, rayonKm: initialValues.zone_rayon_km ?? 15 }
+      : null
+  );
+  const [zoneCarteOuverte, setZoneCarteOuverte] = useState(false);
   const [q, setQ] = useState(initialValues.q ?? '');
   const [niveaux, setNiveaux] = useState(initialValues.niveau ?? []);
   const [distanceMin, setDistanceMin] = useState(initialValues.distance_min ?? '');
@@ -69,7 +75,9 @@ export default function SearchForm({ onSearch, initialValues = {} }) {
   }, []);
 
   const criteres = {
-    zone: zone || undefined,
+    zone_lat: zoneSelection?.lat,
+    zone_lon: zoneSelection?.lon,
+    zone_rayon_km: zoneSelection?.rayonKm,
     q: q || undefined,
     niveau: niveaux.length ? niveaux : undefined,
     distance_min: distanceMin || undefined,
@@ -116,7 +124,7 @@ export default function SearchForm({ onSearch, initialValues = {} }) {
   }
 
   function handleReset() {
-    setZone('');
+    setZoneSelection(null);
     setQ('');
     setNiveaux([]);
     setDistanceMin('');
@@ -146,17 +154,6 @@ export default function SearchForm({ onSearch, initialValues = {} }) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="ex : lac bleu"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none"
-          />
-        </label>
-
-        <label className="flex flex-col gap-1 text-sm text-gray-600">
-          Zone
-          <input
-            type="text"
-            value={zone}
-            onChange={(e) => setZone(e.target.value)}
-            placeholder="ex : Écrins"
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none"
           />
         </label>
@@ -248,6 +245,25 @@ export default function SearchForm({ onSearch, initialValues = {} }) {
             />
           </div>
         </div>
+      </div>
+
+      <div>
+        <div className="mb-1 flex items-center gap-2 text-sm text-gray-600">
+          <span>Zone géographique</span>
+          <button
+            type="button"
+            onClick={() => setZoneCarteOuverte((v) => !v)}
+            className="text-sm font-medium text-[var(--color-accent-dark)] underline"
+          >
+            {zoneCarteOuverte ? 'Masquer la carte' : 'Sélectionner une zone sur la carte'}
+          </button>
+          {zoneSelection && !zoneCarteOuverte && (
+            <span className="text-xs text-gray-500">
+              Rayon {zoneSelection.rayonKm} km autour de ({zoneSelection.lat.toFixed(3)}, {zoneSelection.lon.toFixed(3)})
+            </span>
+          )}
+        </div>
+        {zoneCarteOuverte && <ZoneMapSelector value={zoneSelection} onChange={setZoneSelection} />}
       </div>
 
       <div>

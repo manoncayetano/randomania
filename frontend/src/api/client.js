@@ -22,6 +22,9 @@ export async function getMe() {
 function buildParams(criteres) {
   const params = new URLSearchParams();
   if (criteres.zone) params.append('zone', criteres.zone);
+  if (criteres.zone_lat != null) params.append('zone_lat', criteres.zone_lat);
+  if (criteres.zone_lon != null) params.append('zone_lon', criteres.zone_lon);
+  if (criteres.zone_rayon_km != null) params.append('zone_rayon_km', criteres.zone_rayon_km);
   if (criteres.q) params.append('q', criteres.q);
   (criteres.niveau || []).forEach((n) => params.append('niveau', n));
   if (criteres.distance_min) params.append('distance_min', criteres.distance_min);

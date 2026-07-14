@@ -185,6 +185,9 @@ def _filtered_parcours(
     temps_max: Optional[float] = None,
     a_gpx: Optional[bool] = None,
     a_lien: Optional[bool] = None,
+    zone_lat: Optional[float] = None,
+    zone_lon: Optional[float] = None,
+    zone_rayon_km: Optional[float] = None,
 ) -> List[Parcours]:
     query = db.query(Parcours)
 
@@ -232,6 +235,13 @@ def _filtered_parcours(
             if compute_indice_difficulte(p.distance_km, p.denivele_positif)["label"] in labels_set
         ]
 
+    if zone_lat is not None and zone_lon is not None and zone_rayon_km is not None:
+        results = [
+            p for p in results
+            if p.latitude is not None and p.longitude is not None
+            and haversine_km(zone_lat, zone_lon, p.latitude, p.longitude) <= zone_rayon_km
+        ]
+
     return results
 
 
@@ -253,6 +263,9 @@ def count_parcours(
     temps_max: Optional[float] = Query(None, ge=0),
     a_gpx: Optional[bool] = Query(None, description="True : uniquement les randos avec un GPX importé, False : sans GPX"),
     a_lien: Optional[bool] = Query(None, description="True : uniquement les randos avec un lien externe (ex Visorando), False : sans lien"),
+    zone_lat: Optional[float] = Query(None, description="Latitude du centre de la zone sélectionnée sur la carte"),
+    zone_lon: Optional[float] = Query(None, description="Longitude du centre de la zone sélectionnée sur la carte"),
+    zone_rayon_km: Optional[float] = Query(None, gt=0, description="Rayon (km) de la zone sélectionnée sur la carte"),
     db: Session = Depends(get_db),
 ):
     results = _filtered_parcours(
@@ -261,6 +274,7 @@ def count_parcours(
         denivele_negatif_min, denivele_negatif_max,
         tags, favoris_de, indice_difficulte_labels,
         temps_min, temps_max, a_gpx, a_lien,
+        zone_lat, zone_lon, zone_rayon_km,
     )
     return {"count": len(results)}
 
@@ -283,6 +297,9 @@ def search_parcours(
     temps_max: Optional[float] = Query(None, ge=0, description="Temps de trajet en voiture maximum depuis Sénas (min)"),
     a_gpx: Optional[bool] = Query(None, description="True : uniquement les randos avec un GPX importé, False : sans GPX"),
     a_lien: Optional[bool] = Query(None, description="True : uniquement les randos avec un lien externe (ex Visorando), False : sans lien"),
+    zone_lat: Optional[float] = Query(None, description="Latitude du centre de la zone sélectionnée sur la carte"),
+    zone_lon: Optional[float] = Query(None, description="Longitude du centre de la zone sélectionnée sur la carte"),
+    zone_rayon_km: Optional[float] = Query(None, gt=0, description="Rayon (km) de la zone sélectionnée sur la carte"),
     db: Session = Depends(get_db),
     utilisateur: str = Depends(get_current_username),
 ):
@@ -292,6 +309,7 @@ def search_parcours(
         denivele_negatif_min, denivele_negatif_max,
         tags, favoris_de, indice_difficulte_labels,
         temps_min, temps_max, a_gpx, a_lien,
+        zone_lat, zone_lon, zone_rayon_km,
     )
 
     favori_ids = {
