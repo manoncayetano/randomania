@@ -3,7 +3,7 @@ import ElevationProfile from './ElevationProfile';
 
 export default function CarteGraphModal({ parcours, hoverPoint, onHover, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
         className="max-h-[95vh] w-full max-w-6xl overflow-y-auto rounded-xl bg-white p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
