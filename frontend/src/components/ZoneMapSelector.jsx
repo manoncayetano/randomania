@@ -96,7 +96,7 @@ export default function ZoneMapSelector({ value, onChange }) {
           : `Clique sur la carte pour ajouter les points de la zone (${points.length} point${points.length !== 1 ? 's' : ''}).`}
       </p>
 
-      <div className="overflow-hidden rounded-lg border border-gray-300" style={{ height: '18rem' }}>
+      <div className="overflow-hidden rounded-lg border border-gray-300" style={{ height: '34rem' }}>
         <MapContainer center={centre} zoom={value ? 9 : 7} className="h-full w-full">
           <TileLayer
             attribution="&copy; OpenStreetMap contributors"
