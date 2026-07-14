@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=ubuntu
+User=opc
 WorkingDirectory=/opt/randomania/backend
 Environment="COOKIE_SECURE=true"
 ExecStart=/opt/randomania/backend/venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000

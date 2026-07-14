@@ -1,4 +1,4 @@
-# Déploiement sur Oracle Cloud Free Tier
+# Déploiement sur Oracle Cloud Free Tier (Oracle Linux 9)
 
 ## 1. Avant de lancer le script
 
@@ -12,7 +12,7 @@ Dans la console Oracle Cloud, ouvre les ports HTTP/HTTPS pour ta VM :
 ## 2. Connexion à la VM
 
 ```
-ssh -i /chemin/vers/ta-cle.key ubuntu@<IP_DE_LA_VM>
+ssh -i /chemin/vers/ta-cle.key opc@<IP_DE_LA_VM>
 ```
 
 ## 3. Récupérer et lancer le script d'installation
@@ -23,8 +23,10 @@ bash setup.sh
 ```
 
 Le script installe tout (Python, Node, Caddy), récupère le code, build le frontend,
-configure le service qui fait tourner le backend en continu, et active le HTTPS
-automatique. À la fin, il affiche l'adresse à utiliser (`https://xx-xx-xx-xx.nip.io`).
+configure le service qui fait tourner le backend en continu, active le HTTPS
+automatique, et ajuste SELinux (activé par défaut sur Oracle Linux) pour autoriser
+Caddy à servir les fichiers et à contacter le backend. À la fin, il affiche l'adresse
+à utiliser (`https://xx-xx-xx-xx.nip.io`).
 
 ## 4. Récupérer tes données existantes (base, photos, GPX)
 
@@ -32,12 +34,12 @@ Le dépôt GitHub ne contient pas `data/` (exclu volontairement, données person
 Depuis ton PC, copie ton dossier `data/` local vers la VM :
 
 ```
-scp -i /chemin/vers/ta-cle.key -r "data" ubuntu@<IP_DE_LA_VM>:/opt/randomania/
+scp -i /chemin/vers/ta-cle.key -r "data" opc@<IP_DE_LA_VM>:/opt/randomania/
 ```
 
 Puis redémarre le backend pour qu'il prenne en compte les données copiées :
 ```
-ssh -i /chemin/vers/ta-cle.key ubuntu@<IP_DE_LA_VM> "sudo systemctl restart randomania-backend"
+ssh -i /chemin/vers/ta-cle.key opc@<IP_DE_LA_VM> "sudo systemctl restart randomania-backend"
 ```
 
 ## 5. Créer les comptes utilisateurs (si pas déjà fait via la copie de `data/`)
@@ -51,7 +53,7 @@ python scripts/gerer_utilisateurs.py creer manon Manon 'MotDePasse'
 ## Mettre à jour l'appli après un nouveau push sur GitHub
 
 ```
-ssh -i /chemin/vers/ta-cle.key ubuntu@<IP_DE_LA_VM>
+ssh -i /chemin/vers/ta-cle.key opc@<IP_DE_LA_VM>
 cd /opt/randomania && bash deploy/setup.sh
 ```
 

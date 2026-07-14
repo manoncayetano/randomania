@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installation complète de randomania sur une VM Ubuntu fraîche (Oracle Cloud Free Tier).
+# Installation complète de randomania sur une VM Oracle Linux 9 fraîche (Oracle Cloud Free Tier).
 # À lancer une seule fois, en te connectant à la VM en SSH :
 #   bash setup.sh
 set -e
@@ -8,25 +8,24 @@ REPO_URL="https://github.com/manoncayetano/randomania.git"
 APP_DIR="/opt/randomania"
 
 echo "=== Mise à jour du système ==="
-sudo apt-get update
-sudo apt-get install -y python3-venv python3-pip git curl ufw
+sudo dnf update -y
+sudo dnf install -y python3 python3-pip git curl firewalld policycoreutils-python-utils
 
-echo "=== Pare-feu (ouverture HTTP/HTTPS/SSH) ==="
-sudo ufw allow 22/tcp
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw --force enable
+echo "=== Pare-feu (ouverture HTTP/HTTPS) ==="
+sudo systemctl enable --now firewalld
+sudo firewall-cmd --permanent --add-service=ssh
+sudo firewall-cmd --permanent --add-port=80/tcp
+sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --reload
 
 echo "=== Installation de Node.js ==="
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-sudo apt-get install -y nodejs
+curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo -E bash -
+sudo dnf install -y nodejs
 
 echo "=== Installation de Caddy ==="
-sudo apt-get install -y debian-keyring debian-archive-keyring apt-transport-https
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-sudo apt-get update
-sudo apt-get install -y caddy
+sudo dnf install -y 'dnf-command(copr)'
+sudo dnf copr enable -y @caddy/caddy
+sudo dnf install -y caddy
 
 echo "=== Récupération du code ==="
 if [ -d "$APP_DIR/.git" ]; then
@@ -56,10 +55,16 @@ sudo systemctl daemon-reload
 sudo systemctl enable randomania-backend
 sudo systemctl restart randomania-backend
 
+echo "=== SELinux : autoriser Caddy à servir les fichiers et à contacter le backend ==="
+sudo setsebool -P httpd_can_network_connect 1
+sudo semanage fcontext -a -t httpd_sys_content_t "${APP_DIR}/frontend/dist(/.*)?" || true
+sudo restorecon -Rv "${APP_DIR}/frontend/dist"
+
 echo "=== Config Caddy (HTTPS automatique via nip.io) ==="
 IP=$(curl -s ifconfig.me)
 IP_DASH=$(echo "$IP" | tr '.' '-')
 sudo sed "s/{{DOMAIN}}/${IP_DASH}.nip.io/" "$APP_DIR/deploy/Caddyfile" | sudo tee /etc/caddy/Caddyfile > /dev/null
+sudo systemctl enable --now caddy
 sudo systemctl restart caddy
 
 echo ""
