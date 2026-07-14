@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getParcours } from '../api/client';
+import DifficultyBadge from './DifficultyBadge';
 
 const COULEUR_REFERENCE = '#1d9e75';
 // Fixed categorical order (never reassigned by rank) — see dataviz skill palette.
@@ -127,6 +128,14 @@ export default function RandosAutourMap({ reference, results }) {
                   <Link to={`/parcours/${p.id}`} className="font-medium underline">
                     {p.nom}
                   </Link>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[var(--color-accent-dark)]">
+                    <span>{p.distance_km} km</span>
+                    <span>+{p.denivele_positif} m / -{p.denivele_negatif} m</span>
+                    <span>{p.duree_marche_min}–{p.duree_marche_max} h</span>
+                  </div>
+                  <div className="mt-1">
+                    <DifficultyBadge indice={p.indice_difficulte} label={p.indice_difficulte_label} compact />
+                  </div>
                   <div className="mt-1 text-gray-500">
                     {extra ? 'Cliquer pour retirer le tracé' : loadingIds.has(p.id) ? 'Chargement...' : 'Cliquer pour afficher le tracé GPX'}
                   </div>
