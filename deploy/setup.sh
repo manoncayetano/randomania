@@ -55,6 +55,10 @@ sudo systemctl daemon-reload
 sudo systemctl enable randomania-backend
 sudo systemctl restart randomania-backend
 
+echo "=== Autorisation du redémarrage sans mot de passe (nécessaire pour le déploiement automatique) ==="
+echo "opc ALL=(root) NOPASSWD: /bin/systemctl restart randomania-backend" | sudo tee /etc/sudoers.d/randomania-deploy > /dev/null
+sudo chmod 440 /etc/sudoers.d/randomania-deploy
+
 echo "=== SELinux : autoriser Caddy à servir les fichiers et à contacter le backend ==="
 sudo setsebool -P httpd_can_network_connect 1
 sudo semanage fcontext -a -t httpd_sys_content_t "${APP_DIR}/frontend/dist(/.*)?" || true

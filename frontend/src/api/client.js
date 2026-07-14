@@ -110,6 +110,11 @@ export async function importRando(url) {
   return data;
 }
 
+export async function importZone(lieu, rayonKm, niveaux) {
+  const { data } = await client.post('/import/zone', { lieu, rayon_km: rayonKm, niveaux });
+  return data;
+}
+
 export async function calculerIndiceDifficulte(distanceKm, deniveleP) {
   const { data } = await client.get('/outils/indice-difficulte', {
     params: { distance_km: distanceKm, denivele_positif: deniveleP },

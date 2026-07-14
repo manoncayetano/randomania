@@ -211,6 +211,49 @@ def run(
     return added, skipped
 
 
+def run_by_location(lieu: str, rayon_km: float, niveaux=("facile", "moyen")) -> dict:
+    """Importe les randonnées Visorando dans un rayon (km) autour d'un lieu donné (ex : 'Sénas, 13560')."""
+    from generation.geocoding import bbox_from_center, geocode
+
+    geo = geocode(lieu)
+    if geo is None:
+        raise ValueError(f"Lieu introuvable : {lieu}")
+    lat, lon, nom_affiche = geo
+    bbox = bbox_from_center(lat, lon, rayon_km)
+
+    difficulties = [DIFFICULTY_RANGE[n] for n in niveaux]
+    min_diff = min(d[0] for d in difficulties)
+    max_diff = max(d[1] for d in difficulties)
+
+    items_html = fetch_listing(bbox, min_diff, max_diff)
+
+    db = SessionLocal()
+    added, skipped = 0, 0
+    try:
+        for html in items_html:
+            data = parse_item(html)
+            if data.get("niveau") not in niveaux:
+                continue
+            if save_hike(db, lieu, data):
+                added += 1
+            else:
+                skipped += 1
+        db.commit()
+    finally:
+        db.close()
+
+    return {
+        "lieu": lieu,
+        "lieu_trouve": nom_affiche,
+        "latitude": lat,
+        "longitude": lon,
+        "rayon_km": rayon_km,
+        "trouvees": len(items_html),
+        "ajoutees": added,
+        "deja_presentes": skipped,
+    }
+
+
 def fetch_detail_page(url: str) -> str:
     r = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=30)
     r.raise_for_status()
