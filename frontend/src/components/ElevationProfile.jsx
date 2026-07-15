@@ -1,13 +1,21 @@
 import { useRef, useState } from 'react';
 
 const WIDTH = 400;
-const HEIGHT = 107;
-const PAD_LEFT = 8;
-const PAD_RIGHT = 8;
-const PAD_TOP = 12;
-const PAD_BOTTOM = 24;
+const HEIGHT = 160;
+const PAD_LEFT = 34;
+const PAD_RIGHT = 10;
+const PAD_TOP = 14;
+const PAD_BOTTOM = 22;
 
-export default function ElevationProfile({ profile, onHover, heightClass = 'h-32' }) {
+function niceStep(range, targetTicks = 4) {
+  const rough = range / targetTicks || 1;
+  const mag = 10 ** Math.floor(Math.log10(rough));
+  const norm = rough / mag;
+  const step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+  return step * mag;
+}
+
+export default function ElevationProfile({ profile, onHover, heightClass = 'h-40' }) {
   const svgRef = useRef(null);
   const [hoverIndex, setHoverIndex] = useState(null);
 
@@ -22,10 +30,12 @@ export default function ElevationProfile({ profile, onHover, heightClass = 'h-32
 
   let deniveleP = 0;
   let deniveleN = 0;
+  let peakIndex = 0;
   for (let i = 1; i < elevations.length; i++) {
     const delta = elevations[i] - elevations[i - 1];
     if (delta > 0) deniveleP += delta;
     else deniveleN += -delta;
+    if (elevations[i] > elevations[peakIndex]) peakIndex = i;
   }
 
   const plotW = WIDTH - PAD_LEFT - PAD_RIGHT;
@@ -43,8 +53,14 @@ export default function ElevationProfile({ profile, onHover, heightClass = 'h-32
   const areaPath = `${linePath} L ${x(maxDist)} ${PAD_TOP + plotH} L ${x(0)} ${PAD_TOP + plotH} Z`;
 
   const kmMarks = [];
-  for (let km = 0; km <= maxDist; km += Math.max(1, Math.ceil(maxDist / 8))) {
+  for (let km = 0; km <= maxDist; km += Math.max(1, Math.ceil(maxDist / 6))) {
     kmMarks.push(km);
+  }
+
+  const eleStep = niceStep(maxEle - minEle || 1);
+  const eleMarks = [];
+  for (let ele = Math.ceil(minEle / eleStep) * eleStep; ele <= maxEle; ele += eleStep) {
+    eleMarks.push(Math.round(ele));
   }
 
   function setHover(index) {
@@ -69,6 +85,7 @@ export default function ElevationProfile({ profile, onHover, heightClass = 'h-32
   }
 
   const hover = hoverIndex != null ? validProfile[hoverIndex] : null;
+  const peak = validProfile[peakIndex];
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-3">
@@ -83,8 +100,29 @@ export default function ElevationProfile({ profile, onHover, heightClass = 'h-32
         onMouseMove={handleMove}
         onMouseLeave={() => setHover(null)}
       >
-        <path d={areaPath} fill="var(--color-accent)" opacity="0.15" stroke="none" />
-        <path d={linePath} fill="none" stroke="var(--color-accent)" strokeWidth="2" />
+        {eleMarks.map((ele) => (
+          <g key={ele}>
+            <line
+              x1={PAD_LEFT}
+              x2={WIDTH - PAD_RIGHT}
+              y1={y(ele)}
+              y2={y(ele)}
+              stroke="#e5e7eb"
+              strokeWidth="1"
+            />
+            <text x={PAD_LEFT - 5} y={y(ele)} dy="3" fontSize="9" fill="#9ca3af" textAnchor="end">
+              {ele}
+            </text>
+          </g>
+        ))}
+
+        <path d={areaPath} fill="var(--color-accent)" opacity="0.1" stroke="none" />
+        <path d={linePath} fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+
+        <circle cx={x(peak.distance_km)} cy={y(peak.elevation)} r="3" fill="var(--color-accent)" />
+        <text x={x(peak.distance_km)} y={y(peak.elevation) - 7} fontSize="9" fill="#6b7280" textAnchor="middle">
+          {Math.round(peak.elevation)} m
+        </text>
 
         {kmMarks.map((km) => (
           <text key={km} x={x(km)} y={HEIGHT - 6} fontSize="9" fill="#9ca3af" textAnchor="middle">
@@ -103,7 +141,14 @@ export default function ElevationProfile({ profile, onHover, heightClass = 'h-32
               strokeWidth="1"
               strokeDasharray="3,3"
             />
-            <circle cx={x(hover.distance_km)} cy={y(hover.elevation)} r="3.5" fill="var(--color-accent-dark)" />
+            <circle
+              cx={x(hover.distance_km)}
+              cy={y(hover.elevation)}
+              r="4"
+              fill="var(--color-accent-dark)"
+              stroke="#ffffff"
+              strokeWidth="2"
+            />
           </>
         )}
       </svg>
