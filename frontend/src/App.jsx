@@ -8,8 +8,10 @@ import Projets from './pages/Projets';
 import ProjetDetail from './pages/ProjetDetail';
 import Suggestions from './pages/Suggestions';
 import Ameliorations from './pages/Ameliorations';
+import CalculateurDifficulte from './pages/CalculateurDifficulte';
 import Login from './pages/Login';
 import UserSwitcher from './components/UserSwitcher';
+import OutilsMenu from './components/OutilsMenu';
 import { useUser } from './context/UserContext';
 
 function AppLayout() {
@@ -48,6 +50,7 @@ function AppLayout() {
           <Link to="/ameliorations" className="text-sm text-gray-500 hover:text-[var(--color-accent-dark)]">
             Améliorations
           </Link>
+          <OutilsMenu />
         </div>
         <UserSwitcher />
       </header>
@@ -62,6 +65,7 @@ function AppLayout() {
         <Route path="/projets/:id" element={<ProjetDetail />} />
         <Route path="/suggestions" element={<Suggestions />} />
         <Route path="/ameliorations" element={<Ameliorations />} />
+        <Route path="/outils/calculateur-difficulte" element={<CalculateurDifficulte />} />
       </Routes>
     </div>
   );

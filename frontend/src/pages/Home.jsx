@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { countParcours, listAmeliorations, listProjets } from '../api/client';
 import { useUser } from '../context/UserContext';
-import DifficultyCalculator from '../components/DifficultyCalculator';
 
 function MontagneHero({ prenom }) {
   return (
@@ -112,10 +111,6 @@ export default function Home() {
         >
           Importer une rando
         </Link>
-      </div>
-
-      <div className="mt-10 text-left">
-        <DifficultyCalculator />
       </div>
     </div>
   );
