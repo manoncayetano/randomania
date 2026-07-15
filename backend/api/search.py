@@ -1,3 +1,4 @@
+import io
 import json
 from typing import List, Optional
 
@@ -6,8 +7,9 @@ from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+import storage
 from api.auth import get_current_username
-from db.database import DATA_DIR, get_db
+from db.database import get_db
 from db.models import Avis, Favori, Parcours, ParcoursTag, Photo, Realisation, Restriction, Tag
 from generation.difficulty import compute_indice_difficulte
 from generation.geo import haversine_km, point_in_polygon
@@ -103,24 +105,14 @@ class ParcoursDetailOut(ParcoursOut):
     restrictions: List[RestrictionOut] = []
 
 
-def _gpx_points_for(p: Parcours) -> List[List[float]]:
-    if p.gpx_path and p.gpx_path.startswith("/media/gpx/"):
-        try:
-            parsed = parse_gpx(DATA_DIR / "gpx" / p.gpx_path[len("/media/gpx/"):])
-            return parsed["points"]
-        except Exception:
-            return []
-    return []
-
-
-def _gpx_profile_for(p: Parcours) -> List[dict]:
-    if p.gpx_path and p.gpx_path.startswith("/media/gpx/"):
-        try:
-            parsed = parse_gpx(DATA_DIR / "gpx" / p.gpx_path[len("/media/gpx/"):])
-            return parsed["profile"]
-        except Exception:
-            return []
-    return []
+def _parse_gpx_for(p: Parcours) -> Optional[dict]:
+    if not p.gpx_path:
+        return None
+    try:
+        contenu = storage.read_file(p.gpx_path, f"gpx/{p.id}")
+        return parse_gpx(io.BytesIO(contenu))
+    except Exception:
+        return None
 
 
 def _cover_photo_url(p: Parcours, size: str) -> Optional[str]:
@@ -365,13 +357,9 @@ def get_parcours(parcours_id: int, db: Session = Depends(get_db), utilisateur: s
     )
     realisations = {parcours_id: realisation.date_realisation} if realisation else {}
 
-    gpx_points, gpx_profile = [], []
-    if p.gpx_path and p.gpx_path.startswith("/media/gpx/"):
-        try:
-            parsed = parse_gpx(DATA_DIR / "gpx" / p.gpx_path[len("/media/gpx/"):])
-            gpx_points, gpx_profile = parsed["points"], parsed["profile"]
-        except Exception:
-            gpx_points, gpx_profile = [], []
+    parsed = _parse_gpx_for(p)
+    gpx_points = parsed["points"] if parsed else []
+    gpx_profile = parsed["profile"] if parsed else []
 
     base = _to_parcours_out(p, favori_ids, realisations)
     return ParcoursDetailOut(

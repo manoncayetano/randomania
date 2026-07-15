@@ -1,6 +1,10 @@
 # Données personnelles (base SQLite, photos, GPX) — jamais versionnées
 data/
 
+# Secrets (base Postgres, clés Supabase...) — jamais versionnés
+.env
+backend/.env
+
 # Python
 backend/venv/
 backend/__pycache__/

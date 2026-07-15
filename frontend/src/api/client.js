@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// En dev, le proxy Vite redirige '/api' vers le backend local (voir vite.config.js).
+// En prod, si le frontend (ex: Vercel) et le backend (ex: Render/Fly) sont sur des
+// domaines différents, définir VITE_API_BASE_URL (ex: "https://randomania-api.onrender.com/api").
 const client = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   withCredentials: true,
 });
 

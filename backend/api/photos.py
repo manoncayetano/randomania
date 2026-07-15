@@ -5,12 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+import storage
 from db.database import get_db
 from db.models import Parcours, Photo
 
 router = APIRouter()
 
-PHOTOS_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "photos"
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
@@ -28,15 +28,11 @@ async def upload_photo(parcours_id: int, file: UploadFile, db: Session = Depends
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Format d'image non supporté (jpg, png, webp)")
 
-    parcours_dir = PHOTOS_DIR / str(parcours_id)
-    parcours_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{uuid.uuid4().hex}{ext}"
-    dest = parcours_dir / filename
-
     content = await file.read()
-    dest.write_bytes(content)
+    url = storage.save_file(f"photos/{parcours_id}", filename, content, storage.guess_content_type(ext))
 
-    photo = Photo(parcours_id=parcours_id, url_ou_chemin=f"/media/photos/{parcours_id}/{filename}")
+    photo = Photo(parcours_id=parcours_id, url_ou_chemin=url)
     db.add(photo)
     db.commit()
     db.refresh(photo)
@@ -73,9 +69,7 @@ def delete_photo(photo_id: int, db: Session = Depends(get_db)):
     if parcours and parcours.cover_photo_id == photo.id:
         parcours.cover_photo_id = None
 
-    if photo.url_ou_chemin.startswith("/media/photos/"):
-        relative = photo.url_ou_chemin[len("/media/photos/"):]
-        (PHOTOS_DIR / relative).unlink(missing_ok=True)
+    storage.delete_file(photo.url_ou_chemin, f"photos/{photo.parcours_id}")
 
     db.delete(photo)
     db.commit()

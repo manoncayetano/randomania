@@ -7,14 +7,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+import storage
 from api.auth import get_current_username
-from db.database import DATA_DIR, get_db
+from db.database import get_db
 from db.models import Amelioration
 
 router = APIRouter()
 
 STATUTS_VALIDES = {"nouveau", "en_cours", "termine"}
-IMAGES_DIR = DATA_DIR / "ameliorations"
 EXTENSIONS_AUTORISEES = {".jpg", ".jpeg", ".png", ".webp"}
 
 
@@ -110,8 +110,7 @@ def delete_amelioration(amelioration_id: int, db: Session = Depends(get_db)):
     amelioration = db.query(Amelioration).filter(Amelioration.id == amelioration_id).first()
     if amelioration is None:
         raise HTTPException(status_code=404, detail="Demande introuvable")
-    if amelioration.image_path and amelioration.image_path.startswith("/media/ameliorations/"):
-        (IMAGES_DIR / amelioration.image_path[len("/media/ameliorations/"):]).unlink(missing_ok=True)
+    storage.delete_file(amelioration.image_path, f"ameliorations/{amelioration_id}")
     db.delete(amelioration)
     db.commit()
     return {"status": "ok"}
@@ -127,16 +126,14 @@ async def upload_image(amelioration_id: int, file: UploadFile, db: Session = Dep
     if ext not in EXTENSIONS_AUTORISEES:
         raise HTTPException(status_code=400, detail="Format d'image non supporté (jpg, png, webp)")
 
-    dossier = IMAGES_DIR / str(amelioration_id)
-    dossier.mkdir(parents=True, exist_ok=True)
+    dossier = f"ameliorations/{amelioration_id}"
     filename = f"{uuid.uuid4().hex}{ext}"
     contenu = await file.read()
-    (dossier / filename).write_bytes(contenu)
+    url = storage.save_file(dossier, filename, contenu, storage.guess_content_type(ext))
 
-    if amelioration.image_path and amelioration.image_path.startswith("/media/ameliorations/"):
-        (IMAGES_DIR / amelioration.image_path[len("/media/ameliorations/"):]).unlink(missing_ok=True)
+    storage.delete_file(amelioration.image_path, dossier)
 
-    amelioration.image_path = f"/media/ameliorations/{amelioration_id}/{filename}"
+    amelioration.image_path = url
     amelioration.date_maj = datetime.now(timezone.utc).isoformat()
     db.commit()
     db.refresh(amelioration)
@@ -149,8 +146,7 @@ def delete_image(amelioration_id: int, db: Session = Depends(get_db)):
     if amelioration is None:
         raise HTTPException(status_code=404, detail="Demande introuvable")
 
-    if amelioration.image_path and amelioration.image_path.startswith("/media/ameliorations/"):
-        (IMAGES_DIR / amelioration.image_path[len("/media/ameliorations/"):]).unlink(missing_ok=True)
+    storage.delete_file(amelioration.image_path, f"ameliorations/{amelioration_id}")
 
     amelioration.image_path = None
     amelioration.date_maj = datetime.now(timezone.utc).isoformat()

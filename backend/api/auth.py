@@ -63,11 +63,14 @@ def get_current_username(utilisateur: Utilisateur = Depends(get_current_user)) -
 
 
 def _set_session_cookie(response: Response, token: str):
+    # SameSite=None est nécessaire dès que le frontend et le backend sont sur des
+    # domaines différents (ex : Vercel + Render) — mais exige Secure=True, d'où le lien
+    # avec COOKIE_SECURE. En local (même origine via le proxy Vite), "lax" suffit.
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=token,
         httponly=True,
-        samesite="lax",
+        samesite="none" if COOKIE_SECURE else "lax",
         secure=COOKIE_SECURE,
         max_age=SESSION_DURATION_DAYS * 24 * 3600,
         path="/",

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from api.auth import get_current_username
-from api.search import ElevationPointOut, ParcoursOut, _gpx_points_for, _gpx_profile_for, _to_parcours_out
+from api.search import ElevationPointOut, ParcoursOut, _parse_gpx_for, _to_parcours_out
 from db.database import get_db
 from db.models import Parcours, Projet, ProjetEtape
 from generation.overlap import compute_overlap_aware_stats
@@ -47,10 +47,11 @@ class EtapeOut(BaseModel):
 
 
 def _etape_parcours_out(p: Parcours) -> EtapeParcoursOut:
+    parsed = _parse_gpx_for(p)
     return EtapeParcoursOut(
         **_to_parcours_out(p).model_dump(),
-        gpx_points=_gpx_points_for(p),
-        gpx_profile=_gpx_profile_for(p),
+        gpx_points=parsed["points"] if parsed else [],
+        gpx_profile=parsed["profile"] if parsed else [],
     )
 
 
@@ -142,9 +143,10 @@ def stats_chevauchement(projet_id: int, body: StatsChevauchementIn, db: Session 
         if e.id not in etape_ids:
             continue
         p = e.parcours
+        parsed = _parse_gpx_for(p)
         hikes.append({
             "id": e.id,
-            "profile": _gpx_profile_for(p),
+            "profile": parsed["profile"] if parsed else [],
             "distance_km": p.distance_km,
             "denivele_positif": p.denivele_positif,
             "denivele_negatif": p.denivele_negatif,
