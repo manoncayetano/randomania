@@ -224,6 +224,7 @@ class Amelioration(Base):
     description = Column(Text)
     statut = Column(Text, nullable=False, default="nouveau")
     demandeur = Column(Text, nullable=False)
+    image_path = Column(Text)
     date_creation = Column(Text, server_default=func.current_timestamp())
     date_maj = Column(Text)
 

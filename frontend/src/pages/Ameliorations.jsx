@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   createAmelioration,
   deleteAmelioration,
+  deleteAmeliorationImage,
   listAmeliorations,
   listDemandeursAmeliorations,
   updateAmelioration,
+  uploadAmeliorationImage,
 } from '../api/client';
 
 const STATUTS = ['nouveau', 'en_cours', 'termine'];
@@ -72,6 +74,65 @@ function AmeliorationForm({ initial, onSubmit, onCancel }) {
         </button>
       </div>
     </form>
+  );
+}
+
+function ImageAttachment({ item, onChange }) {
+  const fileInputRef = useRef(null);
+  const [envoiEnCours, setEnvoiEnCours] = useState(false);
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEnvoiEnCours(true);
+    try {
+      await uploadAmeliorationImage(item.id, file);
+      onChange();
+    } finally {
+      setEnvoiEnCours(false);
+      e.target.value = '';
+    }
+  }
+
+  async function handleDelete() {
+    await deleteAmeliorationImage(item.id);
+    onChange();
+  }
+
+  return (
+    <div className="mt-3">
+      {item.image_path && (
+        <div className="mb-2">
+          <img
+            src={item.image_path}
+            alt=""
+            className="max-h-48 rounded-lg border border-gray-200 object-contain"
+          />
+        </div>
+      )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      <div className="flex items-center gap-3 text-xs">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={envoiEnCours}
+          className="text-[var(--color-accent-dark)] underline disabled:opacity-50"
+        >
+          {envoiEnCours ? 'Envoi...' : item.image_path ? "Remplacer l'image" : '+ Ajouter une image'}
+        </button>
+        {item.image_path && (
+          <button type="button" onClick={handleDelete} className="text-red-600 underline">
+            Supprimer l'image
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -198,6 +259,8 @@ export default function Ameliorations() {
                   </p>
                 </div>
               </div>
+
+              <ImageAttachment item={item} onChange={load} />
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {STATUTS.filter((s) => s !== item.statut).map((s) => (

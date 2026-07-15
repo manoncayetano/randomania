@@ -21,6 +21,7 @@ from api.tags import router as tags_router
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 (DATA_DIR / "photos").mkdir(parents=True, exist_ok=True)
 (DATA_DIR / "gpx").mkdir(parents=True, exist_ok=True)
+(DATA_DIR / "ameliorations").mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Rando App API", version="0.1.0")
 
@@ -43,6 +44,7 @@ app.include_router(ameliorations_router, dependencies=_authenticated)
 
 app.mount("/media/photos", StaticFiles(directory=str(DATA_DIR / "photos")), name="photos")
 app.mount("/media/gpx", StaticFiles(directory=str(DATA_DIR / "gpx")), name="gpx")
+app.mount("/media/ameliorations", StaticFiles(directory=str(DATA_DIR / "ameliorations")), name="ameliorations")
 
 
 @app.get("/")

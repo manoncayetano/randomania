@@ -154,6 +154,20 @@ export async function deleteAmelioration(id) {
   await client.delete(`/ameliorations/${id}`);
 }
 
+export async function uploadAmeliorationImage(id, file) {
+  const form = new FormData();
+  form.append('file', file);
+  const { data } = await client.post(`/ameliorations/${id}/image`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function deleteAmeliorationImage(id) {
+  const { data } = await client.delete(`/ameliorations/${id}/image`);
+  return data;
+}
+
 export async function calculerIndiceDifficulte(distanceKm, deniveleP) {
   const { data } = await client.get('/outils/indice-difficulte', {
     params: { distance_km: distanceKm, denivele_positif: deniveleP },
