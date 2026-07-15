@@ -37,6 +37,7 @@ function decrireJour(jour, index) {
 export default function Suggestions() {
   const [prompt, setPrompt] = useState('');
   const [chainageStrict, setChainageStrict] = useState(null);
+  const [inclureRealisees, setInclureRealisees] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
@@ -53,7 +54,7 @@ export default function Suggestions() {
     setLoading(true);
     setError(null);
     try {
-      const data = await suggererEnchainement(texte, chainageStrict);
+      const data = await suggererEnchainement(texte, chainageStrict, inclureRealisees);
       setResult(data);
       setChainageStrict(data.interpretation.chainage_strict);
     } catch (err) {
@@ -157,6 +158,15 @@ export default function Suggestions() {
           Enchaînement à pied strict (randos très proches géographiquement, pour un bivouac entre les deux)
         </label>
 
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          <input
+            type="checkbox"
+            checked={inclureRealisees}
+            onChange={(e) => setInclureRealisees(e.target.checked)}
+          />
+          Inclure les randos déjà réalisées
+        </label>
+
         <button
           type="submit"
           disabled={loading}
@@ -178,6 +188,9 @@ export default function Suggestions() {
             <p className="mt-1">
               Enchaînement : {result.interpretation.chainage_strict ? 'à pied (proximité stricte)' : 'même zone/massif'}
             </p>
+            {result.interpretation.tags_souhaites?.length > 0 && (
+              <p className="mt-1">Envies détectées : {result.interpretation.tags_souhaites.join(', ')}</p>
+            )}
           </div>
 
           {result.chaines.length === 0 && (
@@ -207,6 +220,18 @@ export default function Suggestions() {
                           <span>+{etape.denivele_positif} m</span>
                           <DifficultyBadge indice={etape.indice_difficulte} label={etape.indice_difficulte_label} compact />
                         </div>
+                        {etape.raisons?.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {etape.raisons.map((raison) => (
+                              <span
+                                key={raison}
+                                className="rounded-full bg-[var(--color-tag-bg)] px-2 py-0.5 text-[11px] text-[var(--color-accent-dark)]"
+                              >
+                                {raison}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

@@ -1,5 +1,5 @@
 import statistics
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from db.models import Parcours
 from generation.geo import haversine_km
@@ -10,15 +10,57 @@ MAX_CHAINES_BRUTES = 60
 MAX_RESULTATS = 15
 
 
-def _score_qualite(p: Parcours):
-    """Priorise les randos déjà favorites/bien notées par la famille plutôt qu'un
-    ordre d'id arbitraire — c'est ce qui rendait les propositions peu pertinentes."""
+def _note_moyenne(p: Parcours) -> float:
     notes = [a.note for a in p.avis if a.note is not None]
-    note_moyenne = statistics.mean(notes) if notes else 0
-    return (-len(p.favoris), -note_moyenne, p.id)
+    return statistics.mean(notes) if notes else 0
 
 
-def _candidats_pour_jour(candidats: List[Parcours], duree_max_h: Optional[float], chainage_strict: bool):
+def _tags_du_parcours(p: Parcours) -> Set[str]:
+    return {pt.tag.nom for pt in p.parcours_tags}
+
+
+def _nb_tags_correspondants(p: Parcours, tags_souhaites: Optional[List[str]]) -> int:
+    if not tags_souhaites:
+        return 0
+    return len(_tags_du_parcours(p) & set(tags_souhaites))
+
+
+def _score_qualite(p: Parcours, tags_souhaites: Optional[List[str]]):
+    """Priorise les randos qui correspondent aux envies décrites dans le texte, puis
+    déjà favorites/bien notées par la famille, puis proches de la maison — plutôt
+    qu'un simple ordre d'id arbitraire (peu pertinent)."""
+    return (
+        -_nb_tags_correspondants(p, tags_souhaites),
+        -len(p.favoris),
+        -_note_moyenne(p),
+        p.temps_voiture_min if p.temps_voiture_min is not None else 9999,
+        p.id,
+    )
+
+
+def raisons_pour(p: Parcours, tags_souhaites: Optional[List[str]] = None) -> List[str]:
+    """Petites explications affichées avec chaque proposition, pour que le choix soit
+    compréhensible plutôt qu'une boîte noire."""
+    raisons = []
+    tags_matches = _tags_du_parcours(p) & set(tags_souhaites or [])
+    if tags_matches:
+        raisons.append("Correspond à : " + ", ".join(sorted(tags_matches)))
+    if len(p.favoris) > 0:
+        raisons.append("Favorite")
+    note = _note_moyenne(p)
+    if note >= 4:
+        raisons.append(f"Bien notée ({note:.1f}/5)")
+    if p.temps_voiture_min is not None and p.temps_voiture_min <= 60:
+        raisons.append(f"À {round(p.temps_voiture_min)} min de chez vous")
+    return raisons
+
+
+def _candidats_pour_jour(
+    candidats: List[Parcours],
+    duree_max_h: Optional[float],
+    chainage_strict: bool,
+    tags_souhaites: Optional[List[str]] = None,
+):
     resultats = candidats
     if duree_max_h is not None:
         resultats = [
@@ -27,7 +69,7 @@ def _candidats_pour_jour(candidats: List[Parcours], duree_max_h: Optional[float]
         ]
     if chainage_strict:
         resultats = [p for p in resultats if p.latitude is not None and p.longitude is not None]
-    resultats = sorted(resultats, key=_score_qualite)
+    resultats = sorted(resultats, key=lambda p: _score_qualite(p, tags_souhaites))
     return resultats[:MAX_CANDIDATS_PAR_JOUR]
 
 
@@ -43,14 +85,20 @@ def _chainable(precedent: Parcours, suivant: Parcours, chainage_strict: bool) ->
     return True
 
 
-def _construire_chaines_brutes(candidats_par_jour: List[List[Parcours]], chainage_strict: bool) -> List[List[Parcours]]:
+def _construire_chaines_brutes(
+    candidats_par_jour: List[List[Parcours]],
+    chainage_strict: bool,
+    combos_existantes: Optional[Set[frozenset]] = None,
+) -> List[List[Parcours]]:
     resultats: List[List[Parcours]] = []
+    combos_existantes = combos_existantes or set()
 
     def recurse(jour_idx: int, chaine: List[Parcours]):
         if len(resultats) >= MAX_CHAINES_BRUTES:
             return
         if jour_idx == len(candidats_par_jour):
-            resultats.append(list(chaine))
+            if frozenset(p.id for p in chaine) not in combos_existantes:
+                resultats.append(list(chaine))
             return
         for p in candidats_par_jour[jour_idx]:
             if any(existante.id == p.id for existante in chaine):
@@ -85,6 +133,10 @@ def _selectionner_chaines_diversifiees(chaines_brutes: List[List[Parcours]]) -> 
     return selection
 
 
-def build_chains(candidats_par_jour: List[List[Parcours]], chainage_strict: bool) -> List[List[Parcours]]:
-    chaines_brutes = _construire_chaines_brutes(candidats_par_jour, chainage_strict)
+def build_chains(
+    candidats_par_jour: List[List[Parcours]],
+    chainage_strict: bool,
+    combos_existantes: Optional[Set[frozenset]] = None,
+) -> List[List[Parcours]]:
+    chaines_brutes = _construire_chaines_brutes(candidats_par_jour, chainage_strict, combos_existantes)
     return _selectionner_chaines_diversifiees(chaines_brutes)

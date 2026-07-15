@@ -122,10 +122,11 @@ export async function importZone(lieu, rayonKm, niveaux) {
   return data;
 }
 
-export async function suggererEnchainement(prompt, chainageStrict) {
+export async function suggererEnchainement(prompt, chainageStrict, inclureRealisees) {
   const { data } = await client.post('/suggestions/enchainement', {
     prompt,
     chainage_strict: chainageStrict,
+    inclure_realisees: inclureRealisees,
   });
   return data;
 }

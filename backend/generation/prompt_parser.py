@@ -16,6 +16,48 @@ JOUR_EXPLICITE_PATTERN = re.compile(r"jour\s*(\d+)", re.IGNORECASE)
 NOMBRE_JOURS_PATTERN = re.compile(r"(\d+)\s*jours?", re.IGNORECASE)
 BIVOUAC_PATTERN = re.compile(r"bivou[ae]?[ck]", re.IGNORECASE)
 
+# Mots-clés libres -> tags existants dans l'appli, pour tenir compte des envies
+# décrites dans le texte ("avec un lac", "vue panoramique") et pas seulement durée/niveau.
+TAG_KEYWORDS = {
+    "cascade": "cascade",
+    "cascades": "cascade",
+    "col": "col",
+    "rivière": "cours d'eau",
+    "riviere": "cours d'eau",
+    "torrent": "cours d'eau",
+    "ruisseau": "cours d'eau",
+    "faune": "faune",
+    "animaux": "faune",
+    "animal": "faune",
+    "forêt": "forêt",
+    "foret": "forêt",
+    "bois": "forêt",
+    "glacier": "glacier",
+    "lac": "lac",
+    "lacs": "lac",
+    "neige": "neige",
+    "patrimoine": "patrimoine",
+    "château": "patrimoine",
+    "chateau": "patrimoine",
+    "historique": "patrimoine",
+    "vue": "point de vue",
+    "panorama": "point de vue",
+    "panoramique": "point de vue",
+    "refuge": "refuge",
+    "sommet": "sommet",
+    "sommets": "sommet",
+    "village": "village",
+}
+
+
+def _extract_tags_souhaites(texte: str):
+    lowered = texte.lower()
+    trouves = []
+    for mot, tag in TAG_KEYWORDS.items():
+        if re.search(rf"\b{mot}\b", lowered) and tag not in trouves:
+            trouves.append(tag)
+    return trouves
+
 
 def _extract_niveau(clause: str):
     lowered = clause.lower()
@@ -80,4 +122,5 @@ def parse_prompt(texte: str) -> dict:
         "nombre_jours": len(jours),
         "jours": jours,
         "chainage_strict_suggere": bivouac_detecte,
+        "tags_souhaites": _extract_tags_souhaites(texte),
     }
