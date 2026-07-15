@@ -45,6 +45,7 @@ def save_file(dossier: str, filename: str, contenu: bytes, content_type: str = "
             f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{chemin}",
             headers={
                 "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+                "apikey": SUPABASE_SERVICE_KEY,
                 "Content-Type": content_type,
             },
             content=contenu,
@@ -72,7 +73,10 @@ def delete_file(url_ou_chemin: str, dossier: str) -> None:
         chemin = url_ou_chemin[len(prefixe_public):]
         httpx.delete(
             f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{chemin}",
-            headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}"},
+            headers={
+                "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+                "apikey": SUPABASE_SERVICE_KEY,
+            },
             timeout=30,
         )
         return

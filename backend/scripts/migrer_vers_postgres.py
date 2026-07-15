@@ -25,6 +25,7 @@ load_dotenv()
 
 from sqlalchemy import create_engine, text
 
+from db import models  # noqa: F401 - enregistre les tables sur Base.metadata
 from db.database import Base, DB_PATH
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -38,6 +39,13 @@ if not DB_PATH.exists():
 
 TABLES_A_IGNORER = {"sessions_utilisateur"}
 
+# parcours.cover_photo_id référence photos.id, et photos.parcours_id référence
+# parcours.id : cycle de clés étrangères que sorted_tables ne peut pas résoudre.
+# On insère donc les parcours avec cover_photo_id vidé, puis on le restaure une
+# fois que les photos existent.
+TABLE_AVEC_CYCLE = "parcours"
+COLONNE_CYCLE = "cover_photo_id"
+
 source_engine = create_engine(f"sqlite:///{DB_PATH}")
 cible_engine = create_engine(DATABASE_URL)
 
@@ -48,6 +56,8 @@ print()
 Base.metadata.create_all(bind=cible_engine)
 
 with source_engine.connect() as source_conn, cible_engine.begin() as cible_conn:
+    cover_photo_ids_a_restaurer = {}
+
     for table in Base.metadata.sorted_tables:
         if table.name in TABLES_A_IGNORER:
             print(f"  {table.name:<25} ignorée")
@@ -58,6 +68,12 @@ with source_engine.connect() as source_conn, cible_engine.begin() as cible_conn:
             print(f"  {table.name:<25} 0 ligne")
             continue
 
+        if table.name == TABLE_AVEC_CYCLE:
+            for ligne in lignes:
+                if ligne.get(COLONNE_CYCLE) is not None:
+                    cover_photo_ids_a_restaurer[ligne["id"]] = ligne[COLONNE_CYCLE]
+                    ligne[COLONNE_CYCLE] = None
+
         cible_conn.execute(table.insert(), lignes)
         print(f"  {table.name:<25} {len(lignes)} ligne(s) copiée(s)")
 
@@ -67,6 +83,16 @@ with source_engine.connect() as source_conn, cible_engine.begin() as cible_conn:
                 f"SELECT setval(pg_get_serial_sequence('{table.name}', 'id'), "
                 f"COALESCE((SELECT MAX(id) FROM {table.name}), 1))"
             ))
+
+    if cover_photo_ids_a_restaurer:
+        parcours_table = Base.metadata.tables[TABLE_AVEC_CYCLE]
+        for parcours_id, photo_id in cover_photo_ids_a_restaurer.items():
+            cible_conn.execute(
+                parcours_table.update()
+                .where(parcours_table.c.id == parcours_id)
+                .values(**{COLONNE_CYCLE: photo_id})
+            )
+        print(f"  {TABLE_AVEC_CYCLE + '.' + COLONNE_CYCLE:<25} {len(cover_photo_ids_a_restaurer)} valeur(s) restaurée(s)")
 
 print()
 print("Terminé. Pense à migrer aussi les fichiers déjà uploadés (photos/GPX/images de")
