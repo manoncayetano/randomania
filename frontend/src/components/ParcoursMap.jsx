@@ -6,6 +6,7 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import RefugeMarkers from './RefugeMarkers';
 import { useRefuges } from '../hooks/useRefuges';
+import { OsmRandoTileLayer, OsmRandoToggleButton } from './OsmRandoLayer';
 
 const COULEUR_REFUGE = '#8b5e34';
 
@@ -56,12 +57,7 @@ export default function ParcoursMap({ parcours, hoverPoint, heightClass = 'h-[17
             attribution="&copy; OpenStreetMap contributors"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {afficherRando && (
-            <TileLayer
-              attribution='&copy; <a href="https://waymarkedtrails.org">Waymarked Trails</a>'
-              url="https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png"
-            />
-          )}
+          <OsmRandoTileLayer actif={afficherRando} />
           {points.length > 1 ? (
             <>
               <Polyline positions={points} pathOptions={{ color: '#1d9e75', weight: 4 }} />
@@ -99,20 +95,7 @@ export default function ParcoursMap({ parcours, hoverPoint, heightClass = 'h-[17
           {refugesEnCours ? 'Chargement des refuges...' : 'Afficher les refuges'}
         </button>
 
-        <button
-          type="button"
-          onClick={() => setAfficherRando((v) => !v)}
-          title={afficherRando ? 'Cliquer pour masquer les sentiers balisés' : 'Cliquer pour afficher les sentiers balisés (OSM Rando)'}
-          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs transition ${
-            afficherRando ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-400 hover:bg-gray-50'
-          }`}
-        >
-          <span
-            className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: '#e0301e', opacity: afficherRando ? 1 : 0.3 }}
-          />
-          OSM Rando
-        </button>
+        <OsmRandoToggleButton actif={afficherRando} onToggle={() => setAfficherRando((v) => !v)} />
       </div>
     </div>
   );

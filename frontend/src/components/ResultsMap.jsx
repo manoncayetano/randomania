@@ -7,6 +7,7 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import RefugeMarkers from './RefugeMarkers';
 import { useRefuges } from '../hooks/useRefuges';
+import { OsmRandoTileLayer, OsmRandoToggleButton } from './OsmRandoLayer';
 
 const COULEUR_REFUGE = '#8b5e34';
 
@@ -37,6 +38,7 @@ function FitBounds({ points }) {
 
 export default function ResultsMap({ parcours }) {
   const [afficherRefuges, setAfficherRefuges] = useState(false);
+  const [afficherRando, setAfficherRando] = useState(false);
   const { refuges, loading: refugesEnCours } = useRefuges(afficherRefuges);
 
   const avecCoordonnees = parcours.filter((p) => p.latitude != null && p.longitude != null);
@@ -63,6 +65,7 @@ export default function ResultsMap({ parcours }) {
             attribution="&copy; OpenStreetMap contributors"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <OsmRandoTileLayer actif={afficherRando} />
           <FitBounds points={points} />
           {avecCoordonnees.map((p) => (
             <Marker key={p.id} position={[p.latitude, p.longitude]}>
@@ -101,6 +104,8 @@ export default function ResultsMap({ parcours }) {
           />
           {refugesEnCours ? 'Chargement des refuges...' : 'Refuges'}
         </button>
+
+        <OsmRandoToggleButton actif={afficherRando} onToggle={() => setAfficherRando((v) => !v)} />
       </div>
     </div>
   );

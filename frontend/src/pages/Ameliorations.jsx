@@ -62,7 +62,7 @@ function AmeliorationForm({ initial, onSubmit, onCancel }) {
         rows={3}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="Description (optionnel)"
+        placeholder="Préciser le prompt pour claude."
         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none"
       />
       <div className="flex gap-2">
@@ -139,7 +139,7 @@ function ImageAttachment({ item, onChange }) {
 export default function Ameliorations() {
   const [items, setItems] = useState(null);
   const [demandeursDisponibles, setDemandeursDisponibles] = useState([]);
-  const [statutsFiltre, setStatutsFiltre] = useState([]);
+  const [statutsFiltre, setStatutsFiltre] = useState(['nouveau', 'en_cours']);
   const [demandeursFiltre, setDemandeursFiltre] = useState([]);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);

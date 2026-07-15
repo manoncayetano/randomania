@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import { buildTracks, pointsForTrack } from '../utils/projetTracks';
 import RefugeMarkers from './RefugeMarkers';
 import { useRefuges } from '../hooks/useRefuges';
+import { OsmRandoTileLayer, OsmRandoToggleButton } from './OsmRandoLayer';
 
 const COULEUR_GLOBALE = '#000000';
 const COULEUR_REFUGE = '#8b5e34';
@@ -40,6 +41,7 @@ function FitBounds({ allPoints }) {
 export default function ProjetMap({ etapes, masquees, onToggle, liaisons, liaisonsEnCours, hoverPoint }) {
   const [afficherGlobal, setAfficherGlobal] = useState(true);
   const [afficherRefuges, setAfficherRefuges] = useState(false);
+  const [afficherRando, setAfficherRando] = useState(false);
   const { refuges, loading: refugesEnCours } = useRefuges(afficherRefuges);
 
   const tracks = buildTracks(etapes).map((t, index) => ({
@@ -91,6 +93,7 @@ export default function ProjetMap({ etapes, masquees, onToggle, liaisons, liaiso
             attribution="&copy; OpenStreetMap contributors"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <OsmRandoTileLayer actif={afficherRando} />
           <FitBounds allPoints={parcoursGlobalPoints} />
 
           {!afficherGlobal &&
@@ -169,6 +172,7 @@ export default function ProjetMap({ etapes, masquees, onToggle, liaisons, liaiso
           />
           {refugesEnCours ? 'Chargement des refuges...' : 'Refuges'}
         </button>
+        <OsmRandoToggleButton actif={afficherRando} onToggle={() => setAfficherRando((v) => !v)} />
         {parcoursGlobalPoints.length > 1 && (
           <button
             type="button"

@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import { OsmRandoTileLayer, OsmRandoToggleButton } from './OsmRandoLayer';
 
 const DefaultIcon = L.icon({
   iconUrl: icon,
@@ -56,6 +57,7 @@ function ModeToggle({ mode, onChange }) {
 
 export default function ZoneMapSelector({ value, onChange }) {
   const [mode, setMode] = useState(value?.type ?? 'cercle');
+  const [afficherRando, setAfficherRando] = useState(false);
 
   const rayonKm = value?.type === 'cercle' ? value.rayonKm : RAYON_DEFAUT_KM;
   const centre = value?.type === 'cercle' ? [value.lat, value.lon] : CENTRE_PAR_DEFAUT;
@@ -88,7 +90,10 @@ export default function ZoneMapSelector({ value, onChange }) {
 
   return (
     <div className="space-y-2">
-      <ModeToggle mode={mode} onChange={handleModeChange} />
+      <div className="flex items-center justify-between">
+        <ModeToggle mode={mode} onChange={handleModeChange} />
+        <OsmRandoToggleButton actif={afficherRando} onToggle={() => setAfficherRando((v) => !v)} />
+      </div>
 
       <p className="text-xs text-gray-500">
         {mode === 'cercle'
@@ -102,6 +107,7 @@ export default function ZoneMapSelector({ value, onChange }) {
             attribution="&copy; OpenStreetMap contributors"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <OsmRandoTileLayer actif={afficherRando} />
           <ClicSurCarte onClick={handleMapClick} />
 
           {mode === 'cercle' && value?.type === 'cercle' && (

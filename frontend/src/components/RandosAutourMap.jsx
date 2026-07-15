@@ -5,6 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getParcours } from '../api/client';
 import DifficultyBadge from './DifficultyBadge';
+import { OsmRandoTileLayer, OsmRandoToggleButton } from './OsmRandoLayer';
 
 const COULEUR_REFERENCE = '#1d9e75';
 // Fixed categorical order (never reassigned by rank) — see dataviz skill palette.
@@ -37,6 +38,7 @@ function FitBounds({ allPoints }) {
 export default function RandosAutourMap({ reference, results }) {
   const [extraTracks, setExtraTracks] = useState({});
   const [loadingIds, setLoadingIds] = useState(() => new Set());
+  const [afficherRando, setAfficherRando] = useState(false);
   const colorCounter = useRef(0);
 
   const referencePoints = reference.gpx_points?.length > 1 ? reference.gpx_points : null;
@@ -103,6 +105,7 @@ export default function RandosAutourMap({ reference, results }) {
             attribution="&copy; OpenStreetMap contributors"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <OsmRandoTileLayer actif={afficherRando} />
           <FitBounds allPoints={allPoints} />
 
           {referencePoints && (
@@ -206,6 +209,7 @@ export default function RandosAutourMap({ reference, results }) {
         {Object.keys(extraTracks).length === 0 && (
           <span className="px-2 py-1 text-gray-400">Clique un point sur la carte pour afficher son tracé GPX</span>
         )}
+        <OsmRandoToggleButton actif={afficherRando} onToggle={() => setAfficherRando((v) => !v)} />
       </div>
     </div>
   );
